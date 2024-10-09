@@ -10,7 +10,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 // Listen for updates to the tab URL
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // Only capture the URL if the tab is active and has a valid URL
-  if (tabId === currentTabId && changeInfo.status === 'complete' && tab.url) {
+  if (tabId === currentTabId && changeInfo.status === "complete" && tab.url) {
     currentTabUrl = tab.url; // Update the current tab URL
 
     // Initialize the API requests array for the current tab URL if it doesn't exist
@@ -27,6 +27,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 // Listen for completed web requests
 chrome.webRequest.onCompleted.addListener(
   function (details) {
+    if (details.method === "OPTIONS") return;
     // Check if the request belongs to the current active tab and it's XHR/Fetch
     if (details.tabId === currentTabId && details.type === "xmlhttprequest") {
       if (currentTabUrl && apiRequests[currentTabId]) {
@@ -49,7 +50,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message === "getAPIRequests") {
     // Send all the requests collected for the active tab (including all navigations within the tab)
     const activeRequests = apiRequests[currentTabId] || {};
-    
+
     sendResponse(activeRequests); // Send all requests for the current tab
   } else {
     sendResponse({}); // Return an empty object if no requests
