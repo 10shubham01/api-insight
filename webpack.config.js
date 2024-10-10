@@ -5,6 +5,11 @@ module.exports = {
     entry: {
         popup: './src/popup.jsx',
         background: './src/chrome/background.js',
+        inject: './src/chrome/inject.js',
+        injected: './src/chrome/injected.js',
+        contentscript: './src/chrome/contentscript.js',
+
+
     },
     mode: 'development',
     output: {

@@ -4,14 +4,13 @@ import "./index.css";
 
 function Popup() {
   const [apiRequests, setApiRequests] = useState({});
-  const [expandedTabs, setExpandedTabs] = useState({}); // State to track expanded tabs
+  const [expandedTabs, setExpandedTabs] = useState({});
 
   useEffect(() => {
-    // Request API requests from the background script
     chrome.runtime.sendMessage("getAPIRequests", (response) => {
       if (response) {
-        setApiRequests(response); // Set the API requests received from background
-        // Automatically expand the first tab URL if it exists
+        setApiRequests(response);
+
         const firstTabUrl = Object.keys(response)[0];
         if (firstTabUrl) {
           setExpandedTabs({ [firstTabUrl]: true });
@@ -20,7 +19,6 @@ function Popup() {
     });
   }, []);
 
-  // Toggle the expanded state for a given tab URL
   const toggleExpand = (tabUrl) => {
     setExpandedTabs((prev) => ({
       ...prev,
@@ -40,7 +38,7 @@ function Popup() {
           {Object.entries(apiRequests).map(([tabUrl, requests], index) => (
             <li key={index} className="border p-3 rounded-md bg-gray-50 shadow">
               <div
-                onClick={() => toggleExpand(tabUrl)} // Toggle on click
+                onClick={() => toggleExpand(tabUrl)}
                 className="cursor-pointer flex justify-between items-center"
               >
                 <strong className="text-blue-600">Tab URL:</strong>
@@ -49,7 +47,7 @@ function Popup() {
                   {expandedTabs[tabUrl] ? "Collapse" : "Expand"}
                 </button>
               </div>
-              {expandedTabs[tabUrl] && ( // Render requests only if expanded
+              {expandedTabs[tabUrl] && (
                 <ul className="mt-2 space-y-2">
                   {requests.map((request, reqIndex) => (
                     <li

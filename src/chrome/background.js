@@ -2,33 +2,36 @@ let apiRequests = {};
 let currentTabId = null;
 let currentTabUrl = null;
 
-// Listen for changes to the active tab
 chrome.tabs.onActivated.addListener((activeInfo) => {
-  currentTabId = activeInfo.tabId; // Update the current tab ID
+  currentTabId = activeInfo.tabId;
 });
 
-// Listen for updates to the tab URL
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // Only capture the URL if the tab is active and has a valid URL
   if (tabId === currentTabId && changeInfo.status === "complete" && tab.url) {
-    currentTabUrl = tab.url; // Update the current tab URL
+    currentTabUrl = tab.url;
 
-    // Initialize the API requests array for the current tab URL if it doesn't exist
     if (!apiRequests[currentTabId]) {
-      apiRequests[currentTabId] = {}; // Initialize an object for the current tab ID
+      apiRequests[currentTabId] = {};
     }
 
     if (!apiRequests[currentTabId][currentTabUrl]) {
-      apiRequests[currentTabId][currentTabUrl] = []; // Initialize array for the current tab URL
+      apiRequests[currentTabId][currentTabUrl] = [];
     }
   }
 });
 
-// Listen for completed web requests
-chrome.webRequest.onCompleted.addListener(
+chrome.webRequest.onBeforeRequest.addListener(
   function (details) {
     if (details.method === "OPTIONS") return;
-    // Check if the request belongs to the current active tab and it's XHR/Fetch
+    console.log(
+      "requestBody",
+      details.requestBody?.raw
+        ?.map(function (data) {
+          return String.fromCharCode.apply(null, new Uint8Array(data.bytes));
+        })
+        .join("")
+    );
+
     if (details.tabId === currentTabId && details.type === "xmlhttprequest") {
       if (currentTabUrl && apiRequests[currentTabId]) {
         apiRequests[currentTabId][currentTabUrl].push({
@@ -40,19 +43,18 @@ chrome.webRequest.onCompleted.addListener(
     }
   },
   {
-    urls: ["<all_urls>"], // Monitor all URLs
-    types: ["xmlhttprequest"], // Filter for XHR/Fetch requests
-  }
+    urls: ["<all_urls>"],
+    types: ["xmlhttprequest"],
+  },
+  ["requestBody"]
 );
 
-// Listen for messages from the popup to send back the captured API requests for the active tab
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message === "getAPIRequests") {
-    // Send all the requests collected for the active tab (including all navigations within the tab)
     const activeRequests = apiRequests[currentTabId] || {};
 
-    sendResponse(activeRequests); // Send all requests for the current tab
+    sendResponse(activeRequests);
   } else {
-    sendResponse({}); // Return an empty object if no requests
+    sendResponse({});
   }
 });
