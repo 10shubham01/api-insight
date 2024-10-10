@@ -1,5 +1,3 @@
-console.log("Starting injected server");
-
 (function (xhr) {
     var XHR = XMLHttpRequest.prototype;
 
@@ -27,37 +25,43 @@ console.log("Starting injected server");
             var myUrl = this._url ? this._url.toLowerCase() : this._url;
 
             if (myUrl) {
-                // Log request body (postData)
+                var requestBody = null;
                 if (postData) {
                     if (typeof postData === 'string') {
                         try {
-                            console.log("Request Body:", JSON.parse(postData));
+                            requestBody = JSON.parse(postData);
                         } catch (err) {
-                            console.log("Request Body (non-JSON):", postData);
+                            requestBody = postData;
                         }
                     } else {
-                        console.log("Request Body (non-string):", postData);
+                        requestBody = postData;
                     }
                 }
 
-                // Log request headers
-                console.log("Request Headers:", this._requestHeaders);
-
-                // Log response headers
-                var responseHeaders = this.getAllResponseHeaders();
-                console.log("Response Headers:", responseHeaders);
-
-                // Log response body if not a blob
+                var responseBody = null;
                 if (this.responseType != 'blob' && this.responseText) {
                     try {
-                        console.log("Response Body:", JSON.parse(this.responseText));
+                        responseBody = JSON.parse(this.responseText);
                     } catch (err) {
-                        console.log("Response Body (non-JSON):", this.responseText);
+                        responseBody = this.responseText;
                     }
                 }
 
-                // Log the URL
-                console.log("Request URL:", this._url);
+                // Create a custom event with the request/response data
+                const event = new CustomEvent("xhrCaptured", {
+                    detail: {
+                        url: this._url,
+                        method: this._method,
+                        requestBody: requestBody,
+                        responseBody: responseBody,
+                        requestHeaders: this._requestHeaders,
+                        responseHeaders: this.getAllResponseHeaders(),
+                        timeStamp: endTime,
+                    }
+                });
+                
+                // Dispatch the event so it can be captured by `inject.js`
+                window.dispatchEvent(event);
             }
         });
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { render } from "react-dom";
+import ReactJson from "react-json-view";
 import "./index.css";
 
 function Popup() {
@@ -10,11 +11,6 @@ function Popup() {
     chrome.runtime.sendMessage("getAPIRequests", (response) => {
       if (response) {
         setApiRequests(response);
-
-        const firstTabUrl = Object.keys(response)[0];
-        if (firstTabUrl) {
-          setExpandedTabs({ [firstTabUrl]: true });
-        }
       }
     });
   }, []);
@@ -63,6 +59,27 @@ function Popup() {
                       {request.method} <br />
                       <strong className="font-semibold">Time:</strong>{" "}
                       {new Date(request.timeStamp).toLocaleTimeString()} <br />
+                      <strong className="font-semibold">
+                        Request Body:
+                      </strong>{" "}
+                      {request.requestBody && (
+                        <ReactJson
+                          src={request.requestBody}
+                          collapsed={1}
+                          theme="monokai"
+                          displayDataTypes={false}
+                        ></ReactJson>
+                      )}
+                      <br />
+                      <strong className="font-semibold">
+                        Response Body:
+                      </strong>{" "}
+                      <ReactJson
+                        src={request.responseBody}
+                        collapsed={1}
+                        theme="monokai"
+                        displayDataTypes={false}
+                      ></ReactJson>
                     </li>
                   ))}
                 </ul>

@@ -20,41 +20,24 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-chrome.webRequest.onBeforeRequest.addListener(
-  function (details) {
-    if (details.method === "OPTIONS") return;
-    console.log(
-      "requestBody",
-      details.requestBody?.raw
-        ?.map(function (data) {
-          return String.fromCharCode.apply(null, new Uint8Array(data.bytes));
-        })
-        .join("")
-    );
-
-    if (details.tabId === currentTabId && details.type === "xmlhttprequest") {
-      if (currentTabUrl && apiRequests[currentTabId]) {
-        apiRequests[currentTabId][currentTabUrl].push({
-          url: details.url,
-          method: details.method,
-          timeStamp: details.timeStamp,
-        });
-      }
-    }
-  },
-  {
-    urls: ["<all_urls>"],
-    types: ["xmlhttprequest"],
-  },
-  ["requestBody"]
-);
-
+// Listen for messages from the content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.url && currentTabId === sender.tab.id) {
+    if (currentTabUrl && apiRequests[currentTabId]) {
+      apiRequests[currentTabId][currentTabUrl].push({
+        url: message.url,
+        method: message.method,
+        requestBody: message.requestBody,
+        responseBody: message.responseBody,
+        requestHeaders: message.requestHeaders,
+        responseHeaders: message.responseHeaders,
+        timeStamp: message.timeStamp,
+      });
+    }
+  }
+
   if (message === "getAPIRequests") {
     const activeRequests = apiRequests[currentTabId] || {};
-
     sendResponse(activeRequests);
-  } else {
-    sendResponse({});
   }
 });
